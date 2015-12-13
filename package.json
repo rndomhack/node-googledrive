@@ -1,5 +1,5 @@
 {
-  "name": "node-gdrive",
+  "name": "gdrive",
   "version": "1.0.0",
   "description": "Google drive for node.js",
   "main": "index.js",
