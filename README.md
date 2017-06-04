@@ -7,69 +7,79 @@ npm i --save googledrive
 ```
 
 ## Example
-This example get root folder files.
-
-```js
-"use strict";
-
-const GoogleDrive = require("googledrive");
-
-let googleDrive = new GoogleDrive({
-    path: {
-        client: path.join(__dirname, "settings/client.json"),
-        token: path.join(__dirname, "settings/token.json")
-    }
-});
-
-googleDrive.loadClient().then(() => {
-    return googleDrive.authorize();
-}).then(() => {
-    return googleDrive.getRootFolder();
-}).then(rootFolder => {
-    return rootFolder.childFiles();
-}).then(childFiles => {
-    childFiles.forEach(childFile => {
-        console.log(childFile);
-    });
-}).catch(err => {
-    console.error(err);
-});
-```
-
-This example upload file with resumable.
-
 ```js
 "use strict";
 
 const fs = require("fs");
-const path = require("path");
+const readline = require("readline");
 const GoogleDrive = require("googledrive");
 
-let googleDrive = new GoogleDrive({
-    path: {
-        client: path.join(__dirname, "settings/client.json"),
-        token: path.join(__dirname, "settings/token.json")
+const path = {
+    client: "path/to/client.json",
+    token: "path/to/token.json",
+    file: "path/to/file.mp4"
+};
+
+(async () => {
+    // Read client and token
+    let client = null;
+    let token = null;
+
+    client = JSON.parse(fs.readFileSync(path.client));
+
+    try {
+        token = JSON.parse(fs.readFileSync(path.token));
+    } catch (err) {
+        // Nothing
     }
-});
 
-let src = "./foo/bar/baz.mp4";
+    const googleDrive = new GoogleDrive({
+        client: client,
+        token: token
+    });
 
-googleDrive.loadClient().then(() => {
-    return googleDrive.authorize();
-}).then(() => {
-    return googleDrive.getRootFolder();
-}).then(rootFolder => {
-    return rootFolder.uploadFileResumable(
-        path.parse(src).base,   // name
-        "video/mp4",            // mimeType
-        fs.statSync(src).size,  // size
-        position => {           // readableCallback
-            return fs.createReadStream(src, { start: position });
+    googleDrive.on("token", _token => {
+        // Write token when getting and refreshing it
+        fs.writeFileSync(path.token, JSON.stringify(_token));
+    });
+
+    if (token === null) {
+        // Authorize
+        const authUrl = googleDrive.generateAuthUrl();
+
+        const code = await new Promise((resolve, reject) => {
+            console.log(`Authorize URL: ${authUrl}`);
+
+            const rl = readline.createInterface({
+                input: process.stdin,
+                output: process.stdout
+            });
+
+            rl.question("Input your code: ", answer => {
+                rl.close();
+
+                if (answer === "") {
+                    reject(new Error("Invalid code"));
+                    return;
+                }
+
+                resolve(answer);
+            });
+        });
+
+        await googleDrive.getToken(code);
+    }
+
+    // Resumable upload
+    const rootFolder = await googleDrive.getRootFolder();
+
+    await rootFolder.uploadFileResumable(
+        path.parse(path.file).base,     // name
+        "video/mp4",                    // mimeType
+        fs.statSync(path.file).size,    // size
+        position => {                   // readableCallback
+            return fs.createReadStream(path.file, { start: position });
         }
     );
-}).then(() => {
-    console.log("done");
-}).catch(err => {
-    console.error(err);
-});
+})();
 ```
