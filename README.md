@@ -11,6 +11,7 @@ npm i --save googledrive
 "use strict";
 
 const fs = require("fs");
+const util = require("util");
 const readline = require("readline");
 const GoogleDrive = require("googledrive");
 
@@ -70,16 +71,29 @@ const path = {
         await googleDrive.getToken(code);
     }
 
-    // Resumable upload
-    const rootFolder = await googleDrive.getRootFolder();
+    // Get root folder
+    const rootFolder = await googleDrive.getFolderById("root");
 
-    await rootFolder.uploadFileResumable(
-        path.parse(path.file).base,     // name
-        "video/mp4",                    // mimeType
-        fs.statSync(path.file).size,    // size
-        position => {                   // readableCallback
-            return fs.createReadStream(path.file, { start: position });
-        }
-    );
+    // Find files in root folder
+    const childFiles = await rootFolder.getChildFiles({
+        query: "name contains 'foo'"
+    });
+
+    // Delete files
+    for (const childFile of childFiles) {
+        await childFile.delete();
+    }
+
+    // Create child file (File has not been created yet)
+    const file = rootFolder.createChildFile({
+        name: "file.mp4",
+        mimeType: "video/mp4"
+    });
+
+    // Resumable upload
+    await file.resumableCreate({
+        contentLength: fs.statSync(path.file).size,
+        readableCallback: position => fs.createReadStream(path.file, { start: position })
+    });
 })();
 ```
