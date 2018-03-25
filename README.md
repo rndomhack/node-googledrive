@@ -15,6 +15,11 @@ const util = require("util");
 const readline = require("readline");
 const GoogleDrive = require("googledrive");
 
+/*
+"client.json" is required.
+See step1 of https://developers.google.com/drive/v3/web/quickstart/nodejs
+*/
+
 const path = {
     client: "path/to/client.json",
     token: "path/to/token.json",
