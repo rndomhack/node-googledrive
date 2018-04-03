@@ -17,6 +17,6 @@
   "author": "rndomhack",
   "license": "MIT",
   "dependencies": {
-    "googleapis": "^27.0.0"
+    "googleapis": "^28.0.1"
   }
 }
