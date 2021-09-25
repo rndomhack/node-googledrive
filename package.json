@@ -1,6 +1,6 @@
 {
   "name": "googledrive",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Google drive fs for node.js",
   "main": "index.js",
   "scripts": {
@@ -17,6 +17,6 @@
   "author": "rndomhack",
   "license": "MIT",
   "dependencies": {
-    "googleapis": "^36.0.0"
+    "googleapis": "^87.0.0"
   }
 }
